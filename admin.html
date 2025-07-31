@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Panel - Employee Records</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Admin Login (HR & CEO Only)</h1>
+
+    <!-- Login Form -->
+    <form id="login-form">
+      <input type="email" id="admin-email" placeholder="Email" required>
+      <input type="password" id="admin-password" placeholder="Password" required>
+      <button type="submit">Login</button>
+    </form>
+
+    <!-- Logout Button -->
+    <button id="logout-btn" style="display:none; margin-top: 20px;">Logout</button>
+
+    <!-- Employee Table -->
+    <div id="employee-section" style="display: none;">
+      <h2>Employee Records</h2>
+      <table id="employee-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Department</th>
+            <th>Designation</th>
+            <th>Employee ID</th>
+          </tr>
+        </thead>
+        <tbody id="employee-data">
+          <!-- Fetched rows -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Firebase SDK v9 Modules -->
+  <script type="module">
+    // Firebase imports
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+    import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-database.js";
+
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDMctgMDS7pnBBkdA_jCAs2BVlMxI6_SMQ",
+      authDomain: "employee-data-d1a52.firebaseapp.com",
+      databaseURL: "https://employee-data-d1a52-default-rtdb.firebaseio.com",
+      projectId: "employee-data-d1a52",
+      storageBucket: "employee-data-d1a52.firebasestorage.app",
+      messagingSenderId: "191250694544",
+      appId: "1:191250694544:web:b2269d3c9c47afcc027315",
+      measurementId: "G-20HK4QVL4W"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
+
+    const loginForm = document.getElementById('login-form');
+    const logoutBtn = document.getElementById('logout-btn');
+    const employeeSection = document.getElementById('employee-section');
+
+    loginForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const email = document.getElementById('admin-email').value;
+      const password = document.getElementById('admin-password').value;
+
+      signInWithEmailAndPassword(auth, email, password)
+        .then(() => {
+          loginForm.style.display = 'none';
+          logoutBtn.style.display = 'block';
+          employeeSection.style.display = 'block';
+          loadEmployees();
+        })
+        .catch((error) => {
+          alert("Login failed: " + error.message);
+        });
+    });
+
+    logoutBtn.addEventListener('click', () => {
+      signOut(auth).then(() => {
+        loginForm.style.display = 'block';
+        logoutBtn.style.display = 'none';
+        employeeSection.style.display = 'none';
+      });
+    });
+
+    function loadEmployees() {
+      const employeeTable = document.getElementById('employee-data');
+      employeeTable.innerHTML = '';
+      const dbRef = ref(db);
+      get(child(dbRef, 'employees')).then(snapshot => {
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          Object.values(data).forEach(emp => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${emp.name}</td>
+              <td>${emp.email}</td>
+              <td>${emp.phone}</td>
+              <td>${emp.department}</td>
+              <td>${emp.designation}</td>
+              <td>${emp.employeeId}</td>
+            `;
+            employeeTable.appendChild(row);
+          });
+        } else {
+          employeeTable.innerHTML = "<tr><td colspan='6'>No employee records found.</td></tr>";
+        }
+      }).catch(error => {
+        alert("Data fetch failed: " + error.message);
+      });
+    }
+  </script>
+</body>
+</html>
